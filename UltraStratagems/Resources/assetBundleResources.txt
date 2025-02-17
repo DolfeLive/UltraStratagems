@@ -1,0 +1,4 @@
+Bullet Particles, prefab
+Deathray Beam, mat
+DeathRayRageEffect, mat
+Stratagem Beam, prefab, apply the stratBullet script to it and also set the tospawn var with bullet spark
