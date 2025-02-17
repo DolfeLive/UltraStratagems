@@ -17,6 +17,7 @@ global using static UltraStratagems.AssetStuff;
 using UnityEngine.Assertions;
 using System.Collections;
 using System.Linq;
+using static UnityEngine.GraphicsBuffer;
 
 namespace UltraStratagems;
 
@@ -39,13 +40,13 @@ public partial class Class1 : BaseUnityPlugin
 {
         instance = this;
 
-        SceneManager.sceneLoaded += (s, l) =>
-        {
-            foreach (var item in OnSceneLoaded)
-            {
-                item.Invoke(s.name);
-            }
-        };
+        //SceneManager.sceneLoaded += (s, l) =>
+        //{
+        //    foreach (var item in OnSceneLoaded)
+        //    {
+        //        item.Invoke(s.name);
+        //    }
+        //};
 
         stratagemManager.Start();
 
@@ -140,12 +141,21 @@ public partial class Class1 : BaseUnityPlugin
 
             if (Input.GetKeyDown(KeyCode.P))
             {
+                StopCoroutine(DeathRayAimSequence());
+
                 DeathRayAiming = true;
                 StartCoroutine(DeathRayAimSequence()); 
 
             }
 
-            
+            if (Input.GetKeyDown(KeyCode.I))
+            {
+                ContinuousBeam contBeam = DeathRay.GetComponent<ContinuousBeam>();
+
+                print($"Env: {LayerMask.LayerToName(contBeam.environmentMask.value)}");
+                print($"Hit: {LayerMask.LayerToName(contBeam.hitMask.value)}");
+
+            }
         }
 
     }
@@ -157,22 +167,58 @@ public partial class Class1 : BaseUnityPlugin
         //DeathRay.GetComponent<ContinuousBeam>().canHitEnemy = true;
         //DeathRay.GetComponent<ContinuousBeam>().canHitPlayer = true;
         Vector3 targetPoint = Vector3.zero;
-        float timeTillShoot = 1f;
-        float radius = 50f;
+        float timeTillShoot = 0f;
         EnemyIdentifier Target = null!;
+        Ray ray = new Ray(nm.cc.transform.position, nm.cc.transform.forward);
+        if (Physics.Raycast(ray, out RaycastHit hitInfo, 100f, LayerMask.GetMask("Environment", "Outdoors", "Default")))
+        {
+            targetPoint = hitInfo.point;
+        }
 
+        DeathRayFindTarget(out Target, targetPoint);
+
+        while (DeathRayAiming)
+        {
+            timeTillShoot += Time.deltaTime;
+            if (Target == null)
+            {
+                DeathRayFindTarget(out Target, targetPoint);
+            }
+
+            DeathRayRotateTowards(Target.gameObject.GetComponent<Collider>().bounds.center, 5f);
+
+            if (timeTillShoot > 1)
+                DeathRayAiming = false;
+
+            yield return null;
+        }
+
+        print($"Death ray shot fired");
+        DeathRay.GetComponent<ContinuousBeam>().canHitEnemy = true;
+        DeathRay.GetComponent<ContinuousBeam>().canHitPlayer = true;
+
+    }
+
+    void DeathRayRotateTowards(Vector3 Point, float speed)
+    {
+        Vector3 direction = (Point - DeathRay.transform.position).normalized;
+        Quaternion newRot = Quaternion.LookRotation(direction, DeathRay.transform.up);
+        //print($"Rotating Death ray: {newRot}");
+        DeathRay.transform.rotation = Quaternion.Slerp(DeathRay.transform.rotation, newRot, speed * Time.deltaTime);
+    }
+
+    void DeathRayFindTarget(out EnemyIdentifier Target, Vector3 targetPoint)
+    {
+        float radius = 50f;
+        Target = null!;
+        
         try
         {
-            Ray ray = new Ray(nm.cc.transform.position, nm.cc.transform.forward);
-            if (Physics.Raycast(ray, out RaycastHit hitInfo, 100f, LayerMask.GetMask("Environment", "Outdoors", "Default")))
-            {
-                targetPoint = hitInfo.point;
-            }
             RaycastHit[] hits = Physics.SphereCastAll(new Ray(targetPoint, Vector3.up), radius, radius, LayerMask.GetMask("EnemyTrigger"));
             if (hits.Length < 1)
             {
                 Debug.LogWarning("Spherecast got nothin");
-                yield break;
+                return;
             }
             List<EnemyIdentifier> identifiers = hits.Select(_ => _.collider.gameObject.GetComponent<EnemyIdentifier>()).ToList();
             print($"Targets in area: {identifiers.Count}");
@@ -189,35 +235,12 @@ public partial class Class1 : BaseUnityPlugin
         }
         catch (NullReferenceException e)
         {
-            Debug.LogError($"Null ref: {e.Message}");
+            Debug.LogError($"Null ref: {e.Message}, {e.StackTrace}, {e.Source}, {e.HResult}");
             DeathRayAiming = false;
         }
 
+        print($"Target Found: {Target.gameObject.name}");
 
-        while (DeathRayAiming)
-        {
-            timeTillShoot += Time.deltaTime;
-            
-            DeathRayRotateTowards(Target.transform.position, 5f);
-
-            if (timeTillShoot > 1)
-                DeathRayAiming = false;
-
-            yield return null;
-        }
-        DeathRay.GetComponent<ContinuousBeam>().canHitEnemy = true;
-        DeathRay.GetComponent<ContinuousBeam>().canHitPlayer = true;
-
-    }
-
-    void DeathRayRotateTowards(Vector3 Point, float t)
-    {
-        Vector3 direction = (Point - DeathRay.transform.position).normalized;
-        Quaternion newRot = Quaternion.LookRotation(direction, DeathRay.transform.up);
-
-        print($"Rotating Death rat: {newRot}");
-
-        DeathRay.transform.rotation = Quaternion.Slerp(DeathRay.transform.rotation, newRot, speed * Time.deltaTime);
     }
 
     public static Dictionary<EnemyType, int> EnemyStrengthRanks = new Dictionary<EnemyType, int>

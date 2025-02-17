@@ -12,8 +12,12 @@
     <None Remove="test.txt" />
   </ItemGroup>
 
+	<PropertyGroup>
+		<PublicizeAll>true</PublicizeAll>
+	</PropertyGroup>
+	
   <ItemGroup>
-    <Reference Include="0Harmony">
+	<Reference Include="0Harmony">
       <HintPath>..\..\_UltrakillDeps\0Harmony.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp">
@@ -61,6 +65,13 @@
     <EmbeddedResource Include="Resources\Orbital_Airburst_Strike_Icon.png" />
     <EmbeddedResource Include="Resources\checksum.txt" />
     <EmbeddedResource Include="Resources\stratagems" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Krafs.Publicizer" Version="2.3.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
 	<Target Name="PostBuild" AfterTargets="Build">
