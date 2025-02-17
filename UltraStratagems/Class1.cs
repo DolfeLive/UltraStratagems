@@ -137,7 +137,7 @@ public partial class Class1 : BaseUnityPlugin
                 Vector3 direction = (hitInfo.point - DeathRay.transform.position).normalized;
                 Quaternion newRot = Quaternion.LookRotation(direction, DeathRay.transform.up);
                 print($"Ray hit: {hitInfo.collider}, pos: {hitInfo.point}, {hitInfo.collider.name}, lay: {hitInfo.collider.gameObject.layer}");
-                
+                 
                 print($"NewRot: {newRot}");
                 DeathRay.transform.rotation = newRot;
             } 
