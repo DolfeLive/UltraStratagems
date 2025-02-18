@@ -14,10 +14,9 @@ global using UnityEngine.SceneManagement;
 global using UltraStratagems.Stratagems;
 global using static UltraStratagems.Class1;
 global using static UltraStratagems.AssetStuff;
-using UnityEngine.Assertions;
-using System.Collections;
-using System.Linq;
-using static UnityEngine.GraphicsBuffer;
+global using UnityEngine.Assertions;
+global using System.Collections;
+global using System.Linq;
 
 namespace UltraStratagems;
 
@@ -58,14 +57,7 @@ public partial class Class1 : BaseUnityPlugin
                 Debug.LogError($"Checksum failed, asset loading isnt working, {reader.ReadToEnd()}");
             }
         }
-
-        //Bomb pod:
-        /*
-        Assets/Asset_Bundles/Models/BombPod_4.prefab
-          Pod_BombPart.002, Assets/Asset_Bundles/Models/Bomb.mat
-          StreetCleanerPod_Door,  Assets/Asset_Bundles/Models/Bomb.mat
-          StreetCleaner_PodModel, Assets/Asset_Bundles/Models/Bomb.mat 
-        */
+        
 
         AssetStuff.AssetBundleBs();
 
@@ -98,11 +90,6 @@ public partial class Class1 : BaseUnityPlugin
 
                 GameObject marker = Instantiate(bombPod, hitInfo.point, nm.cc.transform.rotation);
 
-                //marker.name = "Missile";
-                //marker.transform.Find("Pod_BombPart.002").GetComponent<Renderer>().material = BombMat;
-                //marker.transform.Find("StreetCleanerPod_Door").GetComponent<Renderer>().material = BombMat;
-                //marker.transform.Find("StreetCleaner_PodModel").GetComponent<Renderer>().material = BombMat;
-
                 Vector3 AttackDir = nm.cc.transform.right; 
                 Vector3 AttackPos = hitInfo.point;
 
@@ -128,44 +115,45 @@ public partial class Class1 : BaseUnityPlugin
                 DeathRay.GetComponent<LineRenderer>().useWorldSpace = true;
                 DeathRay.GetComponent<ContinuousBeam>().canHitEnemy = false;
                 DeathRay.GetComponent<ContinuousBeam>().canHitPlayer = false;
-                DeathRay.GetComponent<ContinuousBeam>().damage = 500;
+                DeathRay.GetComponent<ContinuousBeam>().damage = 0;
             }
-        }    
+        }
 
-        
+
 
         if (DeathRay != null)
         {
-            DeathRay.GetComponent<ContinuousBeam>().canHitEnemy = false;
-            DeathRay.GetComponent<ContinuousBeam>().canHitPlayer = false;
+            if (!DeathRayInProgress)
+            {
+                DeathRay.GetComponent<ContinuousBeam>().canHitEnemy = false;
+                DeathRay.GetComponent<ContinuousBeam>().canHitPlayer = false;
+                DeathRay.GetComponent<LineRenderer>().material.color = new(1, 0, 0, 0);
+                DeathRay.GetComponent<ContinuousBeam>().damage = 0;
+            }
 
             if (Input.GetKeyDown(KeyCode.P))
             {
                 StopCoroutine(DeathRayAimSequence());
 
+                DeathRayInProgress = false;
+                DeathRay.GetComponent<ContinuousBeam>().canHitEnemy = false;
+                DeathRay.GetComponent<ContinuousBeam>().canHitPlayer = false;
+                DeathRay.GetComponent<LineRenderer>().material.color = new(1, 0, 0, 0);
+                DeathRay.GetComponent<ContinuousBeam>().damage = 0;
                 DeathRayAiming = true;
+                deathRayFiring = false;
+
                 StartCoroutine(DeathRayAimSequence()); 
-
-            }
-
-            if (Input.GetKeyDown(KeyCode.I))
-            {
-                ContinuousBeam contBeam = DeathRay.GetComponent<ContinuousBeam>();
-
-                print($"Env: {LayerMask.LayerToName(contBeam.environmentMask.value)}");
-                print($"Hit: {LayerMask.LayerToName(contBeam.hitMask.value)}");
-
             }
         }
 
     }
-
+    bool DeathRayInProgress = false;
     bool DeathRayAiming = false;
-
+    bool deathRayFiring = false;
     IEnumerator DeathRayAimSequence()
     {
-        //DeathRay.GetComponent<ContinuousBeam>().canHitEnemy = true;
-        //DeathRay.GetComponent<ContinuousBeam>().canHitPlayer = true;
+        DeathRayInProgress = true;
         Vector3 targetPoint = Vector3.zero;
         float timeTillShoot = 0f;
         EnemyIdentifier Target = null!;
@@ -174,6 +162,11 @@ public partial class Class1 : BaseUnityPlugin
         {
             targetPoint = hitInfo.point;
         }
+        Vector3 direction = (targetPoint - DeathRay.transform.position).normalized;
+        Quaternion newRot = Quaternion.LookRotation(direction, DeathRay.transform.up);
+
+        DeathRay.transform.rotation = newRot;
+
 
         DeathRayFindTarget(out Target, targetPoint);
 
@@ -187,17 +180,39 @@ public partial class Class1 : BaseUnityPlugin
 
             DeathRayRotateTowards(Target.gameObject.GetComponent<Collider>().bounds.center, 5f);
 
+            DeathRay.GetComponent<LineRenderer>().material.color = new Color(1, 0, 0, timeTillShoot);
+
             if (timeTillShoot > 1)
                 DeathRayAiming = false;
 
             yield return null;
         }
-
+          
         print($"Death ray shot fired");
+        float fireTimeLeft = 5f;
+
+        deathRayFiring = true;
+        DeathRayRotateTowards(Target.gameObject.GetComponent<Collider>().bounds.center, 25f);
+
         DeathRay.GetComponent<ContinuousBeam>().canHitEnemy = true;
         DeathRay.GetComponent<ContinuousBeam>().canHitPlayer = true;
+        DeathRay.GetComponent<LineRenderer>().material.color = Color.red;
 
+        while (deathRayFiring)
+        {
+            DeathRayRotateTowards(Target.gameObject.GetComponent<Collider>().bounds.center, 500f);
+            DeathRay.GetComponent<ContinuousBeam>().damage = 1;
+
+            fireTimeLeft -= Time.deltaTime;
+
+            if (fireTimeLeft < 0)
+                deathRayFiring = false;
+
+            yield return null;
+        }
+        DeathRayInProgress = false;
     }
+
 
     void DeathRayRotateTowards(Vector3 Point, float speed)
     {
@@ -250,8 +265,8 @@ public partial class Class1 : BaseUnityPlugin
         { EnemyType.Schism, 3 },
         { EnemyType.Drone, 4 },
         { EnemyType.Turret, 5 },
-        { EnemyType.MaliciousFace, 6 },
-        { EnemyType.Streetcleaner, 7 },
+        { EnemyType.Streetcleaner, 6 },
+        { EnemyType.MaliciousFace, 7 },
         { EnemyType.Soldier, 8 },
         { EnemyType.Cerberus, 9 },
         { EnemyType.Swordsmachine, 10 },
