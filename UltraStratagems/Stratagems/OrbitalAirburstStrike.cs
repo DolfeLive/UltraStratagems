@@ -1,4 +1,6 @@
-﻿namespace UltraStratagems.Stratagems;
+﻿using UnityEngine;
+
+namespace UltraStratagems.Stratagems;
 
 public class OrbitalAirburstStrike : AStratagem
 {
@@ -42,25 +44,50 @@ public class OrbitalAirburstStrike : AStratagem
         
         print($"Set up: {this.GetType()}, Loaded icon: {icon.name}, {icon}");
         //displayTexture.texture = bytesToTexture2D(data);
-
     }
 
     public override void Update()
     {
+        if (!attacking)
+            return;
+
         if (Time.time > endTime && attacking)
         {
             Debug.Log($"Ending stratagem: {this.GetType()}");
             attacking = false;
+            Complete();
             return;
         }
 
 
     }
     
+    IEnumerator AirburstSequence()
+    {
+        GameObject effect1 = Instantiate(dustBig, pos, Quaternion.identity);
+        GameObject effect2 = Instantiate(bulletSpark, pos, Quaternion.identity);
+
+
+    }
+
     public override void BeginAttack(Vector3 pos, Vector3 Dir)
     {
         StartTime = Time.time;
         endTime = StartTime + totalRunTime;
         callingIn = true;
+
+        StartCoroutine(AirburstSequence());
+    }
+
+
+
+    void Complete()
+    {
+        print("Destorying death ray");
+        //HudMessageReceiver.instance.SendHudMessage($"Airburst fin", silent: true);
+        StopAllCoroutines();
+        Destroy(owner);
+        //Destroy(DeathRay);
+        Destroy(gameObject);
     }
 }

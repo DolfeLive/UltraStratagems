@@ -1,0 +1,235 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace UltraStratagems.Stratagems;
+
+class OrbitalPrecisionStrike : AStratagem
+{
+    // Req
+    public GameObject owner;
+    public string name = "Orbital Airburst Strike";
+    public string description = "A projectile which explodes while airborne, creating a deadly rain of shrapnel. Not effective against heavy armor.";
+    public Texture2D icon;
+
+    float runTime = .1f +  3f; // fireTime aimTime
+    float totalRunTime => runTime;
+
+    // Runtime
+    float StartTime;
+    float endTime;
+
+    bool callingIn = false;
+    bool attacking = false;
+    GameObject DeathRay;
+    NewMovement nm => NewMovement.Instance;
+
+    float fireTimeLeft = .025f;
+    float aimTime = 3f;
+
+    bool DeathRayInProgress = false;
+    bool DeathRayAiming = false;
+    bool deathRayFiring = false;
+
+    public override void Start()
+    {
+        Stream iconStream = AssetStuff.GetEmbeddedAsset("Orbital_Airburst_Strike_Icon.png");
+        icon = AssetStuff.StreamToTex(iconStream);
+
+        if (icon == null)
+        {
+            Debug.LogError("Icon texture is null!");
+            return;
+        }
+
+        print($"Set up: {this.GetType()}, Loaded icon: {icon.name}, {icon}");
+        //displayTexture.texture = bytesToTexture2D(data);
+
+    }
+    public override void Update()
+    {
+        if (!attacking)
+            return;
+
+        if (Time.time > endTime && attacking)
+        {
+            Debug.Log($"Ending stratagem: {this.GetType()}");
+            Complete();
+            attacking = false;
+            return;
+        }
+
+    }
+
+    public override void BeginAttack(Vector3 pos, Vector3 Dir)
+    {
+        StartTime = Time.time;
+        endTime = StartTime + totalRunTime;
+        callingIn = true;
+
+        DeathRay = Instantiate(AssetStuff.LoadAsset<GameObject>("assets/__stratagems/stratagem beam.prefab"), pos += new Vector3(0, 100, 0), Quaternion.identity);
+                
+        Vector3 direction = (pos - DeathRay.transform.position).normalized;
+        Quaternion newRot = Quaternion.LookRotation(direction, DeathRay.transform.up);
+        DeathRay.transform.rotation = newRot;
+
+        DeathRay.GetComponent<LineRenderer>().useWorldSpace = true;
+        DeathRay.GetComponent<LineRenderer>().material.color = new(1, 0, 0, 0);
+
+        DeathRay.GetComponent<ContinuousBeam>().canHitEnemy = false;
+        DeathRay.GetComponent<ContinuousBeam>().canHitPlayer = false;
+        DeathRay.GetComponent<ContinuousBeam>().damage = 0;
+
+        DeathRayAiming = true;
+        attacking = true;
+
+        StartCoroutine(DeathRayAimSequence());
+    }
+
+    IEnumerator DeathRayAimSequence()
+    {
+        DeathRayInProgress = true;
+        Vector3 targetPoint = Vector3.zero;
+        float timeTillShoot = 0f;
+        EnemyIdentifier? Target = null!;
+
+        Ray ray = new Ray(nm.cc.transform.position, nm.cc.transform.forward);
+        if (Physics.Raycast(ray, out RaycastHit hitInfo, 100f, LayerMask.GetMask("Environment", "Outdoors", "Default")))
+        {
+            targetPoint = hitInfo.point;
+        }
+
+        Vector3 direction = (targetPoint - DeathRay.transform.position).normalized;
+        Quaternion newRot = Quaternion.LookRotation(direction, DeathRay.transform.up);
+
+        DeathRay.transform.rotation = newRot;
+            
+        DeathRayFindTarget(out Target, targetPoint);
+
+
+        while (DeathRayAiming)
+        {
+            timeTillShoot += Time.deltaTime;
+            if (Target == null || Target.dead)
+            {
+                DeathRayFindTarget(out Target, targetPoint);
+            }
+
+            DeathRayRotateTowards(Target?.gameObject.GetComponent<Collider>().bounds.center, 5f);
+
+            DeathRay.GetComponent<LineRenderer>().material.color = new Color(1, 0, 0, timeTillShoot / aimTime);
+
+            if (timeTillShoot > aimTime)
+                DeathRayAiming = false;
+
+            yield return null;
+        }
+        print($"Death ray aiming complete");
+        //HudMessageReceiver.instance.SendHudMessage($"Death ray aiming complete", silent: true);
+        
+        deathRayFiring = true;
+        DeathRayRotateTowards(Target?.gameObject.GetComponent<Collider>().bounds.center, 25f);
+
+        DeathRay.GetComponent<ContinuousBeam>().canHitEnemy = true;
+        DeathRay.GetComponent<ContinuousBeam>().canHitPlayer = true;
+        DeathRay.GetComponent<LineRenderer>().material.color = Color.red;
+
+        Vector3 pos = DeathRay.transform.Find("Ring (1)").position;
+
+        GameObject effect1 = Instantiate(dustBig, pos, Quaternion.identity);
+        GameObject effect2 = Instantiate(bulletSpark, pos, Quaternion.identity);
+        
+        effect1.transform.localScale = new(50f, 50f, 50f);
+        effect2.transform.localScale = new(5f, 5f, 5f);
+
+        float maxRotateSpeed = 30f;
+
+        while (fireTimeLeft > 0)
+        {
+            fireTimeLeft -= Time.deltaTime;
+
+            if (Target == null || Target.dead)
+            {
+                DeathRayFindTarget(out Target, targetPoint);
+                maxRotateSpeed = 6f;
+            }
+            
+            DeathRayRotateTowards(Target?.gameObject.GetComponent<Collider>().bounds.center, maxRotateSpeed);
+
+            DeathRay.GetComponent<ContinuousBeam>().damage = 5000;
+            
+            yield return null;
+        }
+        DeathRay.GetComponent<ContinuousBeam>().damage = 0;
+        deathRayFiring = false;
+        DeathRayInProgress = false;
+        Complete();
+    }
+
+
+    void DeathRayRotateTowards(Vector3? Point, float speed)
+    {
+        try
+        {
+            if (Point == null)
+                return;
+
+            Vector3 direction = (Point - DeathRay.transform.position).Value.normalized;
+            Quaternion newRot = Quaternion.LookRotation(direction, DeathRay.transform.up);
+            DeathRay.transform.rotation = Quaternion.Slerp(DeathRay.transform.rotation, newRot, speed * Time.deltaTime);
+        }
+        catch (NullReferenceException e)
+        {
+            print("Can no longer rotate towards target");
+        }
+    }
+
+    void DeathRayFindTarget(out EnemyIdentifier Target, Vector3 targetPoint)
+    {
+        float radius = 50f;
+        Target = null!;
+
+        try
+        {
+            RaycastHit[] hits = Physics.SphereCastAll(new Ray(targetPoint, Vector3.up), radius, radius, LayerMask.GetMask("EnemyTrigger"));
+            if (hits.Length < 1)
+            {
+                Debug.LogWarning("Spherecast got nothin");
+                return;
+            }
+            List<EnemyIdentifier> identifiers = hits.Select(_ => _.collider.gameObject.GetComponent<EnemyIdentifier>()).ToList();
+            print($"Targets in area: {identifiers.Count}");
+            Target = identifiers[0];
+            float closestDistance = Vector3.Distance(targetPoint, Target.transform.position);
+
+            foreach (var item in identifiers)
+            {
+                float distance = Vector3.Distance(targetPoint, item.transform.position);
+                if (EnemyStrengthRanks[item.enemyType] > EnemyStrengthRanks[Target.enemyType] ||
+                    (EnemyStrengthRanks[item.enemyType] == EnemyStrengthRanks[Target.enemyType] && distance < closestDistance))
+                {
+                    Target = item;
+                    closestDistance = distance;
+                }
+            }
+
+        }
+        catch (NullReferenceException e)
+        {
+            print("Could not find target");
+        }
+
+        print($"Target Found: {Target.gameObject.name}");
+
+    }
+
+    void Complete()
+    {
+        print("Destorying death ray");
+        //HudMessageReceiver.instance.SendHudMessage($"Death ray fin", silent: true);
+        StopAllCoroutines();
+        Destroy(owner);
+        Destroy(DeathRay);
+        Destroy(gameObject);
+    }
+}
