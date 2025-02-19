@@ -86,6 +86,16 @@ class OrbitalPrecisionStrike : AStratagem
         StartCoroutine(DeathRayAimSequence());
     }
 
+    Vector3? GetPoint()
+    {
+        Ray ray = new Ray(nm.cc.transform.position, nm.cc.transform.forward);
+        if (Physics.Raycast(ray, out RaycastHit hitInfo, 100f, LayerMask.GetMask("Environment", "Outdoors", "Default")))
+        {
+            return hitInfo.point;
+        }
+        return null;
+    }
+
     IEnumerator DeathRayAimSequence()
     {
         DeathRayInProgress = true;
@@ -93,11 +103,7 @@ class OrbitalPrecisionStrike : AStratagem
         float timeTillShoot = 0f;
         EnemyIdentifier? Target = null!;
 
-        Ray ray = new Ray(nm.cc.transform.position, nm.cc.transform.forward);
-        if (Physics.Raycast(ray, out RaycastHit hitInfo, 100f, LayerMask.GetMask("Environment", "Outdoors", "Default")))
-        {
-            targetPoint = hitInfo.point;
-        }
+        targetPoint = GetPoint() ?? Vector3.zero;
 
         Vector3 direction = (targetPoint - DeathRay.transform.position).normalized;
         Quaternion newRot = Quaternion.LookRotation(direction, DeathRay.transform.up);
@@ -139,7 +145,7 @@ class OrbitalPrecisionStrike : AStratagem
         GameObject effect1 = Instantiate(dustBig, pos, Quaternion.identity);
         GameObject effect2 = Instantiate(bulletSpark, pos, Quaternion.identity);
         
-        effect1.transform.localScale = new(50f, 50f, 50f);
+        effect1.transform.localScale = new(2.5f, 2.5f, 2.5f);
         effect2.transform.localScale = new(5f, 5f, 5f);
 
         float maxRotateSpeed = 30f;

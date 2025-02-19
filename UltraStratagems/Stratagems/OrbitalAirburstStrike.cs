@@ -1,5 +1,4 @@
-﻿using UnityEngine;
-
+﻿
 namespace UltraStratagems.Stratagems;
 
 public class OrbitalAirburstStrike : AStratagem
@@ -13,10 +12,13 @@ public class OrbitalAirburstStrike : AStratagem
     float callInDelay = 3;
     float runTime = 12;
     float totalRunTime => callInDelay + runTime;
-    
 
+    int shrapnelCount = 13;
+    int shrapnelBursts = 4;
+    float coneAngle = 15f;
+    //float rocketDelay = 0.1f;
 
-
+    float rocketDelay => runTime / shrapnelBursts;
 
     // Runtime
     float StartTime;
@@ -24,7 +26,7 @@ public class OrbitalAirburstStrike : AStratagem
 
     bool callingIn = false;
     bool attacking = false;
-
+    float rocketCountdown = 0f;
 
     public OrbitalAirburstStrike()
     {
@@ -48,26 +50,150 @@ public class OrbitalAirburstStrike : AStratagem
 
     public override void Update()
     {
-        if (!attacking)
-            return;
+        //if (!attacking)
+        //    return;
 
         if (Time.time > endTime && attacking)
         {
-            Debug.Log($"Ending stratagem: {this.GetType()}");
+            Debug.Log($"Ending stratagem: {this.GetType()}"); 
             attacking = false;
             Complete();
             return;
         }
-
-
     }
-    
+
+    NewMovement nm => NewMovement.instance;
+
+    Vector3? GetPoint()
+    {
+        Ray ray = new Ray(nm.cc.transform.position, nm.cc.transform.forward);
+        if (Physics.Raycast(ray, out RaycastHit hitInfo, 100f, LayerMask.GetMask("Environment", "Outdoors", "Default")))
+        {
+            return hitInfo.point;
+        }
+        return null;
+    }
+
+
+
     IEnumerator AirburstSequence()
     {
-        GameObject effect1 = Instantiate(dustBig, pos, Quaternion.identity);
-        GameObject effect2 = Instantiate(bulletSpark, pos, Quaternion.identity);
+        //GameObject effect1 = Instantiate(dustBig, pos, Quaternion.identity);
+        //GameObject effect2 = Instantiate(bulletSpark, pos, Quaternion.identity);
+        Vector3 targetPoint = GetPoint() ?? Vector3.zero;
+        Vector3 SpawnPoint = targetPoint += new Vector3(0f, 60f, 0f);
+        Vector3 shipRocketSpawn = new(100f, 150f, 100f);
+
+        //Rocket spawns from ship towards the spawnPoint, then explodes releasing the shrapnel
+        Vector3 ang =  SpawnPoint - shipRocketSpawn;
+        ang.Normalize();
+        Quaternion angle = Quaternion.LookRotation(ang);
+
+        float distance = Vector3.Distance(SpawnPoint, shipRocketSpawn);
+        float rocketJetlagTime = distance / rocket.GetComponent<Grenade>().rocketSpeed;
+        print($"rocket delay: {rocketJetlagTime}");
+        
+        for (int i = 0; i < shrapnelBursts; i++)
+        {
+            
+            while (rocketCountdown > 0)
+            {
+                rocketCountdown -= Time.deltaTime;
+
+                yield return null;
+            }
+            rocketCountdown += rocketDelay;
+
+            StartCoroutine(DoRockets(shipRocketSpawn, angle, SpawnPoint));
+        }
+
+        yield return null;
+    }
+
+    IEnumerator DoRockets(Vector3 shipRocketSpawn, Quaternion angle, Vector3 SpawnPoint)
+    {
+
+        _Stopwatch timewatch = new();
+        GameObject orbital = Instantiate(rocket, shipRocketSpawn, angle);
+        timewatch.Start();
+
+        while (orbital != null && (Vector3.Distance(orbital.transform.position, SpawnPoint) > 10))
+        {
+            yield return new WaitForFixedUpdate();
+        }
+
+        if (orbital != null)
+        {
+            orbital.GetComponent<Grenade>().Explode(big: true);
+            timewatch.Stop();
+            print($"It took: {timewatch.Elapsed.Seconds} to arrive");
+            DoShrapnel(SpawnPoint);
+        }
+    }
+
+    void DoShrapnel(Vector3 SpawnPoint)
+    {
+        // Shrapnel
+        List<Vector3> shrapnelNormals = PickShrapnelLocation(SpawnPoint);
+        foreach (Vector3 normal in shrapnelNormals)
+        {
+
+            Quaternion rotation = Quaternion.LookRotation(normal);
+            rotation.eulerAngles += new Vector3(90f, 0f, 0f);
+
+            GameObject obj = Instantiate(rocket, SpawnPoint, rotation);
+            //obj.transform.position += obj.transform.forward * 0.5f;
+
+            //Grenade gren = obj.GetComponent<Grenade>();
+            //gren.harmlessExplosion
 
 
+            Explosion exp = obj.GetComponent<Grenade>().harmlessExplosion.transform.Find("Sphere_8 (1)").GetComponent<Explosion>();
+            exp.friendlyFire = true;
+            exp.canHit = AffectedSubjects.All;
+            exp.enemyDamageMultiplier = 1.2f;
+            exp.damage = 35;
+            exp.friendlyFire = true;
+            exp.halved = false;
+            //obj.GetComponent<Grenade>().
+
+
+
+
+            //obj.transform.localScale = new(0.2f, 2f, 0.2f);
+            Shrapnel.Add(obj);
+        }
+
+    }
+
+    List<GameObject> Shrapnel = new();
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="orign">Where the shrapnel will origninate from</param>
+    /// <returns>List of the shrapnel facing normal</returns>
+    public List<Vector3> PickShrapnelLocation(Vector3 orign) 
+    {
+        List<Vector3> output = new();
+        for (int i = 0; i < shrapnelCount; i++)
+        {
+            float angle = Random.Range(coneAngle, -coneAngle);
+            float radialAngle = Random.Range(0f, 360f);
+
+
+            Vector3 outNormal = new Vector3(
+                Mathf.Cos(radialAngle * Mathf.Deg2Rad) * Mathf.Cos(angle * Mathf.Deg2Rad),
+                Mathf.Sin(angle * Mathf.Deg2Rad),
+                Mathf.Sin(radialAngle * Mathf.Deg2Rad) * Mathf.Cos(angle * Mathf.Deg2Rad)
+            );
+
+
+            output.Add(outNormal);
+        }
+
+
+        return output;
     }
 
     public override void BeginAttack(Vector3 pos, Vector3 Dir)

@@ -17,6 +17,8 @@ global using static UltraStratagems.AssetStuff;
 global using UnityEngine.Assertions;
 global using System.Collections;
 global using System.Linq;
+global using Random = UnityEngine.Random;
+global using _Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace UltraStratagems;
 
@@ -65,12 +67,14 @@ public partial class Class1 : BaseUnityPlugin
         harmlessExplosion = Addressables.LoadAssetAsync<GameObject>("Assets/Prefabs/Attacks and Projectiles/Explosions/Explosion Rocket Harmless.prefab").WaitForCompletion();
         dustBig = Addressables.LoadAssetAsync<GameObject>("Assets/Particles/DustBigEnemy.prefab").WaitForCompletion();
         bulletSpark = Addressables.LoadAssetAsync<GameObject>("Assets/Particles/BulletSpark.prefab").WaitForCompletion();
+        GameObject lazerHit = Addressables.LoadAssetAsync<GameObject>("Assets/Particles/LaserHitParticle.prefab").WaitForCompletion();
+        rocket = Addressables.LoadAssetAsync<GameObject>("Assets/Prefabs/Attacks and Projectiles/Rocket.prefab").WaitForCompletion();
     }
 
     public static GameObject harmlessExplosion;
     public static GameObject dustBig;
     public static GameObject bulletSpark;
-
+    public static GameObject rocket;
     GameObject bombPod;
     Material BombMat;
 
@@ -124,17 +128,24 @@ public partial class Class1 : BaseUnityPlugin
                 //GameObject effect2 = Instantiate(bulletSpark, pos, Quaternion.identity);
                 //GameObject effect3 = Instantiate(harmlessExplosion, pos, Quaternion.identity);
 
-                
+
 
                 stratagemManager.ActivateStratagem<OrbitalPrecisionStrike>(hitInfo.point, Vector3.zero);
 
             }
         }
 
+        if (Input.GetKeyDown(KeyCode.B))
+        {
+            Ray ray = new Ray(nm.cc.transform.position, nm.cc.transform.forward);
+            if (Physics.Raycast(ray, out RaycastHit hitInfo, 100f, LayerMask.GetMask("Environment", "Outdoors", "Default")))
+            {
+                print($"Ray hit: {hitInfo.collider}, pos: {hitInfo.point}, {hitInfo.collider.name}, lay: {hitInfo.collider.gameObject.layer}");
 
 
-        
-
+                stratagemManager.ActivateStratagem<OrbitalAirburstStrike>(hitInfo.point, Vector3.zero);
+            }
+        }
     }
     
 
