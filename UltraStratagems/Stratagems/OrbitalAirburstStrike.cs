@@ -75,7 +75,7 @@ public class OrbitalAirburstStrike : AStratagem
     }
 
 
-
+    float minDistanceFromTarget = 10f;
     IEnumerator AirburstSequence()
     {
         //GameObject effect1 = Instantiate(dustBig, pos, Quaternion.identity);
@@ -90,6 +90,7 @@ public class OrbitalAirburstStrike : AStratagem
         Quaternion angle = Quaternion.LookRotation(ang);
 
         float distance = Vector3.Distance(SpawnPoint, shipRocketSpawn);
+        distance -= minDistanceFromTarget;
         float rocketJetlagTime = distance / rocket.GetComponent<Grenade>().rocketSpeed;
         print($"rocket delay: {rocketJetlagTime}");
         
@@ -117,7 +118,7 @@ public class OrbitalAirburstStrike : AStratagem
         GameObject orbital = Instantiate(rocket, shipRocketSpawn, angle);
         timewatch.Start();
 
-        while (orbital != null && (Vector3.Distance(orbital.transform.position, SpawnPoint) > 10))
+        while (orbital != null && (Vector3.Distance(orbital.transform.position, SpawnPoint) > minDistanceFromTarget))
         {
             yield return new WaitForFixedUpdate();
         }
@@ -126,7 +127,7 @@ public class OrbitalAirburstStrike : AStratagem
         {
             orbital.GetComponent<Grenade>().Explode(big: true);
             timewatch.Stop();
-            print($"It took: {timewatch.Elapsed.Seconds} to arrive");
+            print($"It took: {timewatch.Elapsed.TotalSeconds.ToString("F5")} seconds to arrive");
             DoShrapnel(SpawnPoint);
         }
     }

@@ -16,15 +16,15 @@ public class StratagemManager
 
     public void ActivateStratagem<T>(Vector3 position, Vector3 direction) where T : AStratagem
     {
-        AStratagem? stratagem = equippedStratagems.Find(_ => _ == typeof(T)) as T;
+        //AStratagem? stratagem = equippedStratagems.Find(_ => _ == typeof(T)) as T;
+        //
+        //if (stratagem == null)
+        //{
+        //    Debug.LogWarning("SelectedStratagem is not in equippedStratagems");
+        //    ///return;
+        //}
 
-        if (stratagem == null)
-        {
-            Debug.LogWarning("SelectedStratagem is not in equippedStratagems");
-            ///return;
-        }
-
-        UsingStratagems.Add(stratagem);
+        //UsingStratagems.Add(stratagem);
 
         GameObject owner = new GameObject(typeof(T).Name);
         owner.AddComponent<DestroyOnCheckpointRestart>();
