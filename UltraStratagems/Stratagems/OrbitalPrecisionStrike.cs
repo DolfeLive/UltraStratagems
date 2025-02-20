@@ -228,24 +228,54 @@ class OrbitalPrecisionStrike : AStratagem
     {
         float radius = 50f;
         Target = null!;
-
         try
         {
             RaycastHit[] hits = Physics.SphereCastAll(new Ray(targetPoint, Vector3.up), radius, radius, LayerMask.GetMask("EnemyTrigger"));
-            if (hits.Length < 1)
+            if (hits == null || hits.Length < 1)
             {
-                Debug.LogWarning("Spherecast got nothin");
+                Debug.Log("No targets found in SphereCastAll");
                 return;
             }
-            List<EnemyIdentifier> identifiers = hits.Select(_ => _.collider.gameObject.GetComponent<EnemyIdentifier>()).ToList();
-            print($"Targets in area: {identifiers.Count}");
-            Target = identifiers[0];
-            float closestDistance = Vector3.Distance(targetPoint, Target.transform.position);
 
+            List<EnemyIdentifier> identifiers = new List<EnemyIdentifier>();
+            foreach (var hit in hits)
+            {
+                if (hit.collider != null && hit.collider.gameObject != null)
+                {
+                    var identifier = hit.collider.gameObject.GetComponent<EnemyIdentifier>();
+                    if (identifier != null)
+                    {
+                        identifiers.Add(identifier);
+                    }
+                }
+            }
+
+            Debug.Log($"Targets in area: {identifiers.Count}");
+
+            if (identifiers.Count == 0)
+            {
+                Debug.Log("No valid enemy identifiers found");
+                return;
+            }
+
+            Target = identifiers[0];
+            if (Target == null)
+            {
+                Debug.Log("First target is null");
+                return;
+            }
+
+            float closestDistance = Vector3.Distance(targetPoint, Target.transform.position);
             foreach (var item in identifiers)
             {
+                if (item == null || !EnemyStrengthRanks.ContainsKey(item.enemyType))
+                {
+                    continue;
+                }
+
                 float distance = Vector3.Distance(targetPoint, item.transform.position);
-                if (EnemyStrengthRanks[item.enemyType] > EnemyStrengthRanks[Target.enemyType] ||
+                if (!EnemyStrengthRanks.ContainsKey(Target.enemyType) ||
+                    EnemyStrengthRanks[item.enemyType] > EnemyStrengthRanks[Target.enemyType] ||
                     (EnemyStrengthRanks[item.enemyType] == EnemyStrengthRanks[Target.enemyType] && distance < closestDistance))
                 {
                     Target = item;
@@ -253,14 +283,16 @@ class OrbitalPrecisionStrike : AStratagem
                 }
             }
 
+            if (Target != null && Target.gameObject != null)
+            {
+                Debug.Log($"Target Found: {Target.gameObject.name}");
+            }
         }
-        catch (NullReferenceException e)
+        catch (Exception e)
         {
-            print("Could not find target");
+            Debug.LogError($"Error in DeathRayFindTarget: {e.Message}\n{e.StackTrace}");
+            Target = null!;
         }
-
-        print($"Target Found: {Target.gameObject.name}");
-
     }
 
     void Complete()

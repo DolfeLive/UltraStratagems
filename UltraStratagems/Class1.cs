@@ -66,7 +66,7 @@ public partial class Class1 : BaseUnityPlugin
         bombPod = Addressables.LoadAssetAsync<GameObject>("Assets/Models/Objects/Bomb/BombPod_4.fbx").WaitForCompletion();
         BombMat = Addressables.LoadAssetAsync<Material>("Assets/Models/Objects/Bomb/Bomb.mat").WaitForCompletion();
         harmlessExplosion = Addressables.LoadAssetAsync<GameObject>("Assets/Prefabs/Attacks and Projectiles/Explosions/Explosion Rocket Harmless.prefab").WaitForCompletion();
-        dustBig = Addressables.LoadAssetAsync<GameObject>("Assets/Particles/DustBigEnemy.prefab").WaitForCompletion();
+        dustBig = Addressables.LoadAssetAsync<GameObject>("Assets/Particles/DustBig.prefab").WaitForCompletion();
         bulletSpark = Addressables.LoadAssetAsync<GameObject>("Assets/Particles/BulletSpark.prefab").WaitForCompletion();
         lazerHit = Addressables.LoadAssetAsync<GameObject>("Assets/Particles/LaserHitParticle.prefab").WaitForCompletion();
         rocket = Addressables.LoadAssetAsync<GameObject>("Assets/Prefabs/Attacks and Projectiles/Rocket.prefab").WaitForCompletion();
@@ -112,22 +112,23 @@ public partial class Class1 : BaseUnityPlugin
 
     public void Update()
     {
-        /*
+
         if (Input.GetKeyDown(KeyCode.K))
         {
             Ray ray = new Ray(nm.cc.gameObject.transform.position, nm.cc.gameObject.transform.forward);
             if (Physics.Raycast(ray, out RaycastHit hitInfo, 100f, LayerMask.GetMask("Environment", "Outdoors", "Default")))
             {
-                print($"Ray hit: {hitInfo.collider}, pos: {hitInfo.point}, {hitInfo.collider.name}");
+                //print($"Ray hit: {hitInfo.collider}, pos: {hitInfo.point}, {hitInfo.collider.name}");
 
-                GameObject marker = Instantiate(bombPod, hitInfo.point, nm.cc.transform.rotation);
+                //GameObject marker = Instantiate(bombPod, hitInfo.point, nm.cc.transform.rotation);
+                GameObject marker = Instantiate(dustBig, hitInfo.point, nm.cc.transform.rotation);
 
-                Vector3 AttackDir = nm.cc.transform.right; 
-                Vector3 AttackPos = hitInfo.point;
+                //Vector3 AttackDir = nm.cc.transform.right; 
+                //Vector3 AttackPos = hitInfo.point;
 
                 //stratagemManager.ActivateStratagem<OrbitalAirburstStrike>(AttackPos, AttackDir);
 
-                print($"obj: {marker}, {marker.name}, {marker.scene}");
+                //print($"obj: {marker}, {marker.name}, {marker.scene}");
             }
             else
             {
@@ -135,7 +136,7 @@ public partial class Class1 : BaseUnityPlugin
             }
 
         }
-        */
+        
         if (Input.GetKeyDown(KeyCode.L))
         {
             Ray ray = new Ray(nm.cc.transform.position, nm.cc.transform.forward);
