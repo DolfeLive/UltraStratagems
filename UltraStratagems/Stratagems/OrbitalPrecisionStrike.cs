@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
+﻿
 namespace UltraStratagems.Stratagems;
 
 class OrbitalPrecisionStrike : AStratagem
@@ -60,13 +57,13 @@ class OrbitalPrecisionStrike : AStratagem
         }
 
     }
-
+    Vector3 deathRayOrign;
     public override void BeginAttack(Vector3 pos, Vector3 Dir)
     {
         StartTime = Time.time;
         endTime = StartTime + totalRunTime;
         callingIn = true;
-
+        deathRayOrign = pos + new Vector3(0, 100, 0);
         DeathRay = Instantiate(AssetStuff.LoadAsset<GameObject>("assets/__stratagems/stratagem beam.prefab"), pos += new Vector3(0, 100, 0), Quaternion.identity);
                 
         Vector3 direction = (pos - DeathRay.transform.position).normalized;
@@ -79,6 +76,12 @@ class OrbitalPrecisionStrike : AStratagem
         DeathRay.GetComponent<ContinuousBeam>().canHitEnemy = false;
         DeathRay.GetComponent<ContinuousBeam>().canHitPlayer = false;
         DeathRay.GetComponent<ContinuousBeam>().damage = 0;
+        LayerMask envMask = DeathRay.GetComponent<ContinuousBeam>().environmentMask;
+        envMask = envMask | (1 << 10); // limb
+        envMask = envMask | (1 << 12); // enemytrigger
+        DeathRay.GetComponent<ContinuousBeam>().environmentMask = envMask;
+
+        DeathRay.transform.Find("Ring (1)").GetComponent<Light>().color = Color.red;
 
         DeathRayAiming = true;
         attacking = true;
@@ -95,7 +98,7 @@ class OrbitalPrecisionStrike : AStratagem
         }
         return null;
     }
-
+    int DecoPartiles = 8;
     IEnumerator DeathRayAimSequence()
     {
         DeathRayInProgress = true;
@@ -111,6 +114,13 @@ class OrbitalPrecisionStrike : AStratagem
         DeathRay.transform.rotation = newRot;
             
         DeathRayFindTarget(out Target, targetPoint);
+        Vector3 pos = DeathRay.transform.Find("Ring (1)").position;
+        
+        
+
+        float totalTime = aimTime;
+        int instanceCount = 0;
+        float fixedTimer = 0f;
 
 
         while (DeathRayAiming)
@@ -125,6 +135,26 @@ class OrbitalPrecisionStrike : AStratagem
 
             DeathRay.GetComponent<LineRenderer>().material.color = new Color(1, 0, 0, timeTillShoot / aimTime);
 
+            if (timeTillShoot > aimTime - (DecoPartiles * (Time.fixedDeltaTime)))
+            {
+                fixedTimer += Time.deltaTime;
+                if (fixedTimer >= (Time.fixedDeltaTime / 2) && instanceCount < DecoPartiles)
+                {
+                    pos = DeathRay.transform.Find("Ring (1)").position;
+                    fixedTimer -= Time.fixedDeltaTime;
+                    float t = (float)instanceCount / (DecoPartiles - 1);
+                    Vector3 instantiationPos = Vector3.Lerp(deathRayOrign, pos, t);
+
+                    GameObject vfx = Instantiate(rocketLauncherFire, instantiationPos, DeathRay.transform.rotation);
+                    float scale = Mathf.Lerp(1f, .3f, (float)instanceCount/DecoPartiles);
+                    vfx.transform.localScale = new(scale, scale, scale);
+
+
+                    instanceCount++;
+                }
+
+            }
+
             if (timeTillShoot > aimTime)
                 DeathRayAiming = false;
 
@@ -133,6 +163,8 @@ class OrbitalPrecisionStrike : AStratagem
         print($"Death ray aiming complete");
         //HudMessageReceiver.instance.SendHudMessage($"Death ray aiming complete", silent: true);
         
+
+
         deathRayFiring = true;
         DeathRayRotateTowards(Target?.gameObject.GetComponent<Collider>().bounds.center, 25f);
 
@@ -140,11 +172,13 @@ class OrbitalPrecisionStrike : AStratagem
         DeathRay.GetComponent<ContinuousBeam>().canHitPlayer = true;
         DeathRay.GetComponent<LineRenderer>().material.color = Color.red;
 
-        Vector3 pos = DeathRay.transform.Find("Ring (1)").position;
+
 
         GameObject effect1 = Instantiate(dustBig, pos, Quaternion.identity);
         GameObject effect2 = Instantiate(bulletSpark, pos, Quaternion.identity);
-        
+        Instantiate(lightningExplosion, pos, Quaternion.identity);
+
+
         effect1.transform.localScale = new(2.5f, 2.5f, 2.5f);
         effect2.transform.localScale = new(5f, 5f, 5f);
 

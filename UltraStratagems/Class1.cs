@@ -62,15 +62,42 @@ public partial class Class1 : BaseUnityPlugin
         */
         AssetStuff.AssetBundleBs();
 
+
         bombPod = Addressables.LoadAssetAsync<GameObject>("Assets/Models/Objects/Bomb/BombPod_4.fbx").WaitForCompletion();
         BombMat = Addressables.LoadAssetAsync<Material>("Assets/Models/Objects/Bomb/Bomb.mat").WaitForCompletion();
         harmlessExplosion = Addressables.LoadAssetAsync<GameObject>("Assets/Prefabs/Attacks and Projectiles/Explosions/Explosion Rocket Harmless.prefab").WaitForCompletion();
         dustBig = Addressables.LoadAssetAsync<GameObject>("Assets/Particles/DustBigEnemy.prefab").WaitForCompletion();
         bulletSpark = Addressables.LoadAssetAsync<GameObject>("Assets/Particles/BulletSpark.prefab").WaitForCompletion();
-        GameObject lazerHit = Addressables.LoadAssetAsync<GameObject>("Assets/Particles/LaserHitParticle.prefab").WaitForCompletion();
+        lazerHit = Addressables.LoadAssetAsync<GameObject>("Assets/Particles/LaserHitParticle.prefab").WaitForCompletion();
         rocket = Addressables.LoadAssetAsync<GameObject>("Assets/Prefabs/Attacks and Projectiles/Rocket.prefab").WaitForCompletion();
+        shockwave = Addressables.LoadAssetAsync<GameObject>("Assets/Prefabs/Attacks and Projectiles/PhysicalShockwaveHarmless.prefab").WaitForCompletion();
+        explosion = Addressables.LoadAssetAsync<GameObject>("Assets/Prefabs/Attacks and Projectiles/Explosions/Explosion Harmless.prefab").WaitForCompletion();
+        lightningExplosion = Addressables.LoadAssetAsync<GameObject>("Assets/Prefabs/Attacks and Projectiles/Explosions/Explosion Lightning - No Lightning.prefab").WaitForCompletion();
+        explosionRocketHarmless = Addressables.LoadAssetAsync<GameObject>("Assets/Prefabs/Attacks and Projectiles/Explosions/Explosion Rocket Harmless.prefab").WaitForCompletion();
+        rocketLauncherFire = Addressables.LoadAssetAsync<GameObject>("Assets/Particles/RocketLauncherFire.prefab").WaitForCompletion();
+        rocketLauncherFire.transform.Find("Point Light").GetComponent<Light>().enabled = false;
+
+        Explosion lightningExp = lightningExplosion.transform.Find("Sphere_8").GetComponent<Explosion>();
+        lightningExp.canHit = AffectedSubjects.PlayerOnly;
+        lightningExp.damage = 0;
+        lightningExp.electric = false;
+        lightningExp.ignite = false;
+        lightningExp.harmless = true;
+        lightningExp.enemyDamageMultiplier = 0;
+        lightningExp.maxSize = 5f;
+        lightningExp.speed = 15f;
+
+
+        lightningExplosion.transform.localScale = new(1.25f, 1.25f, 1.25f);
     }
 
+
+    public static GameObject lazerHit;
+    public static GameObject rocketLauncherFire;
+    public static GameObject explosionRocketHarmless;
+    public static GameObject lightningExplosion;
+    public static GameObject explosion;
+    public static GameObject shockwave; 
     public static GameObject harmlessExplosion;
     public static GameObject dustBig;
     public static GameObject bulletSpark;
