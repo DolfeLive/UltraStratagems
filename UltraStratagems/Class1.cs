@@ -74,7 +74,7 @@ public partial class Class1 : BaseUnityPlugin
         explosion = Addressables.LoadAssetAsync<GameObject>("Assets/Prefabs/Attacks and Projectiles/Explosions/Explosion Harmless.prefab").WaitForCompletion();
         lightningExplosion = Addressables.LoadAssetAsync<GameObject>("Assets/Prefabs/Attacks and Projectiles/Explosions/Explosion Lightning - No Lightning.prefab").WaitForCompletion();
         explosionRocketHarmless = Addressables.LoadAssetAsync<GameObject>("Assets/Prefabs/Attacks and Projectiles/Explosions/Explosion Rocket Harmless.prefab").WaitForCompletion();
-        rocketLauncherFire = Addressables.LoadAssetAsync<GameObject>("Assets/Particles/RocketLauncherFire.prefab").WaitForCompletion();
+        rocketLauncherFire = Addressables.LoadAssetAsync<GameObject>("Assets/Particles/RocketLauncherFire.prefab").WaitForCompletion(); 
         rocketLauncherFire.transform.Find("Point Light").GetComponent<Light>().enabled = false;
 
         Explosion lightningExp = lightningExplosion.transform.Find("Sphere_8").GetComponent<Explosion>();

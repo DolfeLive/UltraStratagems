@@ -179,7 +179,7 @@ class OrbitalPrecisionStrike : AStratagem
         Instantiate(lightningExplosion, pos, Quaternion.identity);
 
 
-        effect1.transform.localScale = new(2.5f, 2.5f, 2.5f);
+        //effect1.transform.localScale = new(2.5f, 2.5f, 2.5f);
         effect2.transform.localScale = new(5f, 5f, 5f);
 
         float maxRotateSpeed = 30f;
