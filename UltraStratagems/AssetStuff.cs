@@ -82,7 +82,9 @@ public class AssetStuff : MonoBehaviour
 
     public static T LoadAsset<T>(string name) where T : Object
     {
-        return instance.loadedAssets[name] as T;
+        print($"Loading asset: 'assets/__stratagems/{name}'");
+        T asset = instance.loadedAssets[$"assets/__stratagems/{name}"] as T;
+        return asset;
     }
     
 }

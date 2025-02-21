@@ -64,7 +64,7 @@ class OrbitalPrecisionStrike : AStratagem
         endTime = StartTime + totalRunTime;
         callingIn = true;
         deathRayOrign = pos + new Vector3(0, 100, 0);
-        DeathRay = Instantiate(AssetStuff.LoadAsset<GameObject>("assets/__stratagems/stratagem beam.prefab"), pos += new Vector3(0, 100, 0), Quaternion.identity);
+        DeathRay = Instantiate(AssetStuff.LoadAsset<GameObject>("stratagem beam.prefab"), pos += new Vector3(0, 100, 0), Quaternion.identity);
                 
         Vector3 direction = (pos - DeathRay.transform.position).normalized;
         Quaternion newRot = Quaternion.LookRotation(direction, DeathRay.transform.up);
@@ -174,12 +174,12 @@ class OrbitalPrecisionStrike : AStratagem
 
 
 
-        GameObject effect1 = Instantiate(dustBig, pos, Quaternion.identity);
+        GameObject effect1 = Instantiate(dustExplosion, pos + new Vector3(0, 1f, 0), Quaternion.Euler(-90f,0, 0));
         GameObject effect2 = Instantiate(bulletSpark, pos, Quaternion.identity);
         Instantiate(lightningExplosion, pos, Quaternion.identity);
 
 
-        //effect1.transform.localScale = new(2.5f, 2.5f, 2.5f);
+        effect1.transform.localScale = new(20f, 20f, 20f);
         effect2.transform.localScale = new(5f, 5f, 5f);
 
         float maxRotateSpeed = 30f;

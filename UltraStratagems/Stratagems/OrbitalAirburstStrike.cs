@@ -1,5 +1,6 @@
 ﻿
 using UltraStratagems.Stratagems.Ammunition;
+using UnityEngine;
 
 namespace UltraStratagems.Stratagems;
 
@@ -174,7 +175,13 @@ public class OrbitalAirburstStrike : AStratagem
             ExplosiveAttachment attachment = obj.AddComponent<ExplosiveAttachment>();
             attachment.onDestroy += (vec) =>
             {
-                Instantiate(dustBig, vec, Quaternion.identity);
+                GameObject dust = Instantiate(dustFog, vec, Quaternion.Euler(-90f, 0, 0));
+                dust.transform.localScale = new(10f, 10f, 10f);
+                ParticleSystem part = dust.GetComponent<ParticleSystem>();
+                part.gravityModifier = -0.01f;
+                part.emissionRate = 5f;
+                
+
             };
 
             //obj.transform.localScale = new(0.2f, 2f, 0.2f);

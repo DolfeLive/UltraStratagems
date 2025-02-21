@@ -76,6 +76,10 @@ public partial class Class1 : BaseUnityPlugin
         explosionRocketHarmless = Addressables.LoadAssetAsync<GameObject>("Assets/Prefabs/Attacks and Projectiles/Explosions/Explosion Rocket Harmless.prefab").WaitForCompletion();
         rocketLauncherFire = Addressables.LoadAssetAsync<GameObject>("Assets/Particles/RocketLauncherFire.prefab").WaitForCompletion(); 
         rocketLauncherFire.transform.Find("Point Light").GetComponent<Light>().enabled = false;
+        dustFog = LoadAsset<GameObject>("dustfog.prefab");
+        dustExplosion = LoadAsset<GameObject>("dustexplosion.prefab");
+
+         
 
         Explosion lightningExp = lightningExplosion.transform.Find("Sphere_8").GetComponent<Explosion>();
         lightningExp.canHit = AffectedSubjects.PlayerOnly;
@@ -102,6 +106,8 @@ public partial class Class1 : BaseUnityPlugin
     public static GameObject dustBig;
     public static GameObject bulletSpark;
     public static GameObject rocket;
+    public static GameObject dustFog;
+    public static GameObject dustExplosion;
     GameObject bombPod;
     Material BombMat;
 
@@ -116,12 +122,12 @@ public partial class Class1 : BaseUnityPlugin
         if (Input.GetKeyDown(KeyCode.K))
         {
             Ray ray = new Ray(nm.cc.gameObject.transform.position, nm.cc.gameObject.transform.forward);
-            if (Physics.Raycast(ray, out RaycastHit hitInfo, 100f, LayerMask.GetMask("Environment", "Outdoors", "Default")))
+            if (Physics.Raycast(ray, out RaycastHit hitInfo, 100f, LayerMask.GetMask("Environment", "Outdoors")))
             {
                 //print($"Ray hit: {hitInfo.collider}, pos: {hitInfo.point}, {hitInfo.collider.name}");
 
                 //GameObject marker = Instantiate(bombPod, hitInfo.point, nm.cc.transform.rotation);
-                GameObject marker = Instantiate(dustBig, hitInfo.point, nm.cc.transform.rotation);
+                GameObject marker = Instantiate(dustBig, hitInfo.point, Quaternion.identity);
 
                 //Vector3 AttackDir = nm.cc.transform.right; 
                 //Vector3 AttackPos = hitInfo.point;
