@@ -179,7 +179,7 @@ public class OrbitalAirburstStrike : AStratagem
                 dust.transform.localScale = new(10f, 10f, 10f);
                 ParticleSystem part = dust.GetComponent<ParticleSystem>();
                 part.gravityModifier = -0.01f;
-                
+                part.startLifetime = 8f;
 
             };
 
