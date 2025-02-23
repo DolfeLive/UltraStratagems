@@ -30,7 +30,7 @@ public partial class Class1 : BaseUnityPlugin
     public static Class1 instance;
     public Dictionary<string, Object> loadedAssets = new();
 
-    public AssetBundle assets;
+    public AssetBundle assets; 
 
     public StratagemManager stratagemManager = new();
     public AssetStuff assetStuff = new();
