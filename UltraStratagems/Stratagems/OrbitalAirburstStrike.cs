@@ -1,4 +1,7 @@
 ﻿
+using UltraStratagems.Stratagems.Ammunition;
+using UnityEngine;
+
 namespace UltraStratagems.Stratagems;
 
 public class OrbitalAirburstStrike : AStratagem
@@ -84,6 +87,9 @@ public class OrbitalAirburstStrike : AStratagem
         Vector3 SpawnPoint = targetPoint += new Vector3(0f, 60f, 0f);
         Vector3 shipRocketSpawn = new(100f, 150f, 100f);
 
+        rocket.GetComponent<Grenade>().rideable = true;
+        //rocket.GetComponent<Grenade>().rocketSpeed = 5f;
+
         //Rocket spawns from ship towards the spawnPoint, then explodes releasing the shrapnel
         Vector3 ang =  SpawnPoint - shipRocketSpawn;
         ang.Normalize();
@@ -92,7 +98,7 @@ public class OrbitalAirburstStrike : AStratagem
         float distance = Vector3.Distance(SpawnPoint, shipRocketSpawn);
         distance -= minDistanceFromTarget;
         float rocketJetlagTime = distance / rocket.GetComponent<Grenade>().rocketSpeed;
-        print($"rocket delay: {rocketJetlagTime}");
+        //print($"rocket delay: {rocketJetlagTime}");
         
         for (int i = 0; i < shrapnelBursts; i++)
         {
@@ -116,10 +122,18 @@ public class OrbitalAirburstStrike : AStratagem
 
         _Stopwatch timewatch = new();
         GameObject orbital = Instantiate(rocket, shipRocketSpawn, angle);
+        ExplosiveAttachment attachment = orbital.AddComponent<ExplosiveAttachment>();
         timewatch.Start();
+
+        attachment.onDestroy += (vec) => {
+            DoShrapnel(vec);
+            print("Rocket destroyed so ending early");
+        };
+
 
         while (orbital != null && (Vector3.Distance(orbital.transform.position, SpawnPoint) > minDistanceFromTarget))
         {
+
             yield return new WaitForFixedUpdate();
         }
 
@@ -127,7 +141,7 @@ public class OrbitalAirburstStrike : AStratagem
         {
             orbital.GetComponent<Grenade>().Explode(big: true);
             timewatch.Stop();
-            print($"It took: {timewatch.Elapsed.TotalSeconds.ToString("F5")} seconds to arrive");
+            //print($"It took: {timewatch.Elapsed.TotalSeconds.ToString("F5")} seconds to arrive");
             DoShrapnel(SpawnPoint);
         }
     }
@@ -158,8 +172,16 @@ public class OrbitalAirburstStrike : AStratagem
             exp.halved = false;
             //obj.GetComponent<Grenade>().
 
+            ExplosiveAttachment attachment = obj.AddComponent<ExplosiveAttachment>();
+            attachment.onDestroy += (vec) =>
+            {
+                GameObject dust = Instantiate(dustExplosion, vec, Quaternion.Euler(-90f, 0, 0));
+                dust.transform.localScale = new(10f, 10f, 10f);
+                ParticleSystem part = dust.GetComponent<ParticleSystem>();
+                part.gravityModifier = -0.01f;
+                part.startLifetime = 8f;
 
-
+            };
 
             //obj.transform.localScale = new(0.2f, 2f, 0.2f);
             Shrapnel.Add(obj);

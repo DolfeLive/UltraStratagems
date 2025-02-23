@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
+﻿
 namespace UltraStratagems.Stratagems;
 
 class OrbitalPrecisionStrike : AStratagem
@@ -60,14 +57,14 @@ class OrbitalPrecisionStrike : AStratagem
         }
 
     }
-
+    Vector3 deathRayOrign;
     public override void BeginAttack(Vector3 pos, Vector3 Dir)
     {
         StartTime = Time.time;
         endTime = StartTime + totalRunTime;
         callingIn = true;
-
-        DeathRay = Instantiate(AssetStuff.LoadAsset<GameObject>("assets/__stratagems/stratagem beam.prefab"), pos += new Vector3(0, 100, 0), Quaternion.identity);
+        deathRayOrign = pos + new Vector3(0, 100, 0);
+        DeathRay = Instantiate(AssetStuff.LoadAsset<GameObject>("stratagem beam.prefab"), pos += new Vector3(0, 100, 0), Quaternion.identity);
                 
         Vector3 direction = (pos - DeathRay.transform.position).normalized;
         Quaternion newRot = Quaternion.LookRotation(direction, DeathRay.transform.up);
@@ -79,6 +76,12 @@ class OrbitalPrecisionStrike : AStratagem
         DeathRay.GetComponent<ContinuousBeam>().canHitEnemy = false;
         DeathRay.GetComponent<ContinuousBeam>().canHitPlayer = false;
         DeathRay.GetComponent<ContinuousBeam>().damage = 0;
+        LayerMask envMask = DeathRay.GetComponent<ContinuousBeam>().environmentMask;
+        envMask = envMask | (1 << 10); // limb
+        envMask = envMask | (1 << 12); // enemytrigger
+        DeathRay.GetComponent<ContinuousBeam>().environmentMask = envMask;
+
+        DeathRay.transform.Find("Ring (1)").GetComponent<Light>().color = Color.red;
 
         DeathRayAiming = true;
         attacking = true;
@@ -95,7 +98,7 @@ class OrbitalPrecisionStrike : AStratagem
         }
         return null;
     }
-
+    int DecoPartiles = 8;
     IEnumerator DeathRayAimSequence()
     {
         DeathRayInProgress = true;
@@ -111,6 +114,13 @@ class OrbitalPrecisionStrike : AStratagem
         DeathRay.transform.rotation = newRot;
             
         DeathRayFindTarget(out Target, targetPoint);
+        Vector3 pos = DeathRay.transform.Find("Ring (1)").position;
+        
+        
+
+        float totalTime = aimTime;
+        int instanceCount = 0;
+        float fixedTimer = 0f;
 
 
         while (DeathRayAiming)
@@ -125,6 +135,26 @@ class OrbitalPrecisionStrike : AStratagem
 
             DeathRay.GetComponent<LineRenderer>().material.color = new Color(1, 0, 0, timeTillShoot / aimTime);
 
+            if (timeTillShoot > aimTime - (DecoPartiles * (Time.fixedDeltaTime)))
+            {
+                fixedTimer += Time.deltaTime;
+                if (fixedTimer >= (Time.fixedDeltaTime / 2) && instanceCount < DecoPartiles)
+                {
+                    pos = DeathRay.transform.Find("Ring (1)").position;
+                    fixedTimer -= Time.fixedDeltaTime;
+                    float t = (float)instanceCount / (DecoPartiles - 1);
+                    Vector3 instantiationPos = Vector3.Lerp(deathRayOrign, pos, t);
+
+                    GameObject vfx = Instantiate(rocketLauncherFire, instantiationPos, DeathRay.transform.rotation);
+                    float scale = Mathf.Lerp(1f, .3f, (float)instanceCount/DecoPartiles);
+                    vfx.transform.localScale = new(scale, scale, scale);
+
+
+                    instanceCount++;
+                }
+
+            }
+
             if (timeTillShoot > aimTime)
                 DeathRayAiming = false;
 
@@ -133,6 +163,8 @@ class OrbitalPrecisionStrike : AStratagem
         print($"Death ray aiming complete");
         //HudMessageReceiver.instance.SendHudMessage($"Death ray aiming complete", silent: true);
         
+
+
         deathRayFiring = true;
         DeathRayRotateTowards(Target?.gameObject.GetComponent<Collider>().bounds.center, 25f);
 
@@ -140,12 +172,14 @@ class OrbitalPrecisionStrike : AStratagem
         DeathRay.GetComponent<ContinuousBeam>().canHitPlayer = true;
         DeathRay.GetComponent<LineRenderer>().material.color = Color.red;
 
-        Vector3 pos = DeathRay.transform.Find("Ring (1)").position;
 
-        GameObject effect1 = Instantiate(dustBig, pos, Quaternion.identity);
+
+        GameObject effect1 = Instantiate(dustExplosion, pos + new Vector3(0, 1f, 0), Quaternion.Euler(-90f,0, 0));
         GameObject effect2 = Instantiate(bulletSpark, pos, Quaternion.identity);
-        
-        effect1.transform.localScale = new(2.5f, 2.5f, 2.5f);
+        Instantiate(lightningExplosion, pos, Quaternion.identity);
+
+
+        effect1.transform.localScale = new(20f, 20f, 20f);
         effect2.transform.localScale = new(5f, 5f, 5f);
 
         float maxRotateSpeed = 30f;
@@ -194,24 +228,54 @@ class OrbitalPrecisionStrike : AStratagem
     {
         float radius = 50f;
         Target = null!;
-
         try
         {
             RaycastHit[] hits = Physics.SphereCastAll(new Ray(targetPoint, Vector3.up), radius, radius, LayerMask.GetMask("EnemyTrigger"));
-            if (hits.Length < 1)
+            if (hits == null || hits.Length < 1)
             {
-                Debug.LogWarning("Spherecast got nothin");
+                Debug.Log("No targets found in SphereCastAll");
                 return;
             }
-            List<EnemyIdentifier> identifiers = hits.Select(_ => _.collider.gameObject.GetComponent<EnemyIdentifier>()).ToList();
-            print($"Targets in area: {identifiers.Count}");
-            Target = identifiers[0];
-            float closestDistance = Vector3.Distance(targetPoint, Target.transform.position);
 
+            List<EnemyIdentifier> identifiers = new List<EnemyIdentifier>();
+            foreach (var hit in hits)
+            {
+                if (hit.collider != null && hit.collider.gameObject != null)
+                {
+                    var identifier = hit.collider.gameObject.GetComponent<EnemyIdentifier>();
+                    if (identifier != null)
+                    {
+                        identifiers.Add(identifier);
+                    }
+                }
+            }
+
+            Debug.Log($"Targets in area: {identifiers.Count}");
+
+            if (identifiers.Count == 0)
+            {
+                Debug.Log("No valid enemy identifiers found");
+                return;
+            }
+
+            Target = identifiers[0];
+            if (Target == null)
+            {
+                Debug.Log("First target is null");
+                return;
+            }
+
+            float closestDistance = Vector3.Distance(targetPoint, Target.transform.position);
             foreach (var item in identifiers)
             {
+                if (item == null || !EnemyStrengthRanks.ContainsKey(item.enemyType))
+                {
+                    continue;
+                }
+
                 float distance = Vector3.Distance(targetPoint, item.transform.position);
-                if (EnemyStrengthRanks[item.enemyType] > EnemyStrengthRanks[Target.enemyType] ||
+                if (!EnemyStrengthRanks.ContainsKey(Target.enemyType) ||
+                    EnemyStrengthRanks[item.enemyType] > EnemyStrengthRanks[Target.enemyType] ||
                     (EnemyStrengthRanks[item.enemyType] == EnemyStrengthRanks[Target.enemyType] && distance < closestDistance))
                 {
                     Target = item;
@@ -219,14 +283,16 @@ class OrbitalPrecisionStrike : AStratagem
                 }
             }
 
+            if (Target != null && Target.gameObject != null)
+            {
+                Debug.Log($"Target Found: {Target.gameObject.name}");
+            }
         }
-        catch (NullReferenceException e)
+        catch (Exception e)
         {
-            print("Could not find target");
+            Debug.LogError($"Error in DeathRayFindTarget: {e.Message}\n{e.StackTrace}");
+            Target = null!;
         }
-
-        print($"Target Found: {Target.gameObject.name}");
-
     }
 
     void Complete()

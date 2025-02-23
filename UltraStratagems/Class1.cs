@@ -62,19 +62,52 @@ public partial class Class1 : BaseUnityPlugin
         */
         AssetStuff.AssetBundleBs();
 
+
         bombPod = Addressables.LoadAssetAsync<GameObject>("Assets/Models/Objects/Bomb/BombPod_4.fbx").WaitForCompletion();
         BombMat = Addressables.LoadAssetAsync<Material>("Assets/Models/Objects/Bomb/Bomb.mat").WaitForCompletion();
         harmlessExplosion = Addressables.LoadAssetAsync<GameObject>("Assets/Prefabs/Attacks and Projectiles/Explosions/Explosion Rocket Harmless.prefab").WaitForCompletion();
-        dustBig = Addressables.LoadAssetAsync<GameObject>("Assets/Particles/DustBigEnemy.prefab").WaitForCompletion();
+        dustBig = Addressables.LoadAssetAsync<GameObject>("Assets/Particles/DustBig.prefab").WaitForCompletion();
         bulletSpark = Addressables.LoadAssetAsync<GameObject>("Assets/Particles/BulletSpark.prefab").WaitForCompletion();
-        GameObject lazerHit = Addressables.LoadAssetAsync<GameObject>("Assets/Particles/LaserHitParticle.prefab").WaitForCompletion();
+        lazerHit = Addressables.LoadAssetAsync<GameObject>("Assets/Particles/LaserHitParticle.prefab").WaitForCompletion();
         rocket = Addressables.LoadAssetAsync<GameObject>("Assets/Prefabs/Attacks and Projectiles/Rocket.prefab").WaitForCompletion();
+        shockwave = Addressables.LoadAssetAsync<GameObject>("Assets/Prefabs/Attacks and Projectiles/PhysicalShockwaveHarmless.prefab").WaitForCompletion();
+        explosion = Addressables.LoadAssetAsync<GameObject>("Assets/Prefabs/Attacks and Projectiles/Explosions/Explosion Harmless.prefab").WaitForCompletion();
+        lightningExplosion = Addressables.LoadAssetAsync<GameObject>("Assets/Prefabs/Attacks and Projectiles/Explosions/Explosion Lightning - No Lightning.prefab").WaitForCompletion();
+        explosionRocketHarmless = Addressables.LoadAssetAsync<GameObject>("Assets/Prefabs/Attacks and Projectiles/Explosions/Explosion Rocket Harmless.prefab").WaitForCompletion();
+        rocketLauncherFire = Addressables.LoadAssetAsync<GameObject>("Assets/Particles/RocketLauncherFire.prefab").WaitForCompletion(); 
+        rocketLauncherFire.transform.Find("Point Light").GetComponent<Light>().enabled = false;
+        dustFog = LoadAsset<GameObject>("dustfog.prefab");
+        dustExplosion = LoadAsset<GameObject>("dustexplosion.prefab");
+
+         
+
+        Explosion lightningExp = lightningExplosion.transform.Find("Sphere_8").GetComponent<Explosion>();
+        lightningExp.canHit = AffectedSubjects.PlayerOnly;
+        lightningExp.damage = 0;
+        lightningExp.electric = false;
+        lightningExp.ignite = false;
+        lightningExp.harmless = true;
+        lightningExp.enemyDamageMultiplier = 0;
+        lightningExp.maxSize = 5f;
+        lightningExp.speed = 15f;
+
+
+        lightningExplosion.transform.localScale = new(1.25f, 1.25f, 1.25f);
     }
 
+
+    public static GameObject lazerHit;
+    public static GameObject rocketLauncherFire;
+    public static GameObject explosionRocketHarmless;
+    public static GameObject lightningExplosion;
+    public static GameObject explosion;
+    public static GameObject shockwave; 
     public static GameObject harmlessExplosion;
     public static GameObject dustBig;
     public static GameObject bulletSpark;
     public static GameObject rocket;
+    public static GameObject dustFog;
+    public static GameObject dustExplosion;
     GameObject bombPod;
     Material BombMat;
 
@@ -85,22 +118,23 @@ public partial class Class1 : BaseUnityPlugin
 
     public void Update()
     {
-        /*
+
         if (Input.GetKeyDown(KeyCode.K))
         {
             Ray ray = new Ray(nm.cc.gameObject.transform.position, nm.cc.gameObject.transform.forward);
-            if (Physics.Raycast(ray, out RaycastHit hitInfo, 100f, LayerMask.GetMask("Environment", "Outdoors", "Default")))
+            if (Physics.Raycast(ray, out RaycastHit hitInfo, 100f, LayerMask.GetMask("Environment", "Outdoors")))
             {
-                print($"Ray hit: {hitInfo.collider}, pos: {hitInfo.point}, {hitInfo.collider.name}");
+                //print($"Ray hit: {hitInfo.collider}, pos: {hitInfo.point}, {hitInfo.collider.name}");
 
-                GameObject marker = Instantiate(bombPod, hitInfo.point, nm.cc.transform.rotation);
+                //GameObject marker = Instantiate(bombPod, hitInfo.point, nm.cc.transform.rotation);
+                GameObject marker = Instantiate(dustBig, hitInfo.point, Quaternion.identity);
 
-                Vector3 AttackDir = nm.cc.transform.right; 
-                Vector3 AttackPos = hitInfo.point;
+                //Vector3 AttackDir = nm.cc.transform.right; 
+                //Vector3 AttackPos = hitInfo.point;
 
                 //stratagemManager.ActivateStratagem<OrbitalAirburstStrike>(AttackPos, AttackDir);
 
-                print($"obj: {marker}, {marker.name}, {marker.scene}");
+                //print($"obj: {marker}, {marker.name}, {marker.scene}");
             }
             else
             {
@@ -108,7 +142,7 @@ public partial class Class1 : BaseUnityPlugin
             }
 
         }
-        */
+        
         if (Input.GetKeyDown(KeyCode.L))
         {
             Ray ray = new Ray(nm.cc.transform.position, nm.cc.transform.forward);
