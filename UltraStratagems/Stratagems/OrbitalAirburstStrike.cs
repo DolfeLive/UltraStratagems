@@ -175,11 +175,11 @@ public class OrbitalAirburstStrike : AStratagem
             ExplosiveAttachment attachment = obj.AddComponent<ExplosiveAttachment>();
             attachment.onDestroy += (vec) =>
             {
-                GameObject dust = Instantiate(dustExplosion, vec, Quaternion.Euler(-90f, 0, 0));
-                dust.transform.localScale = new(10f, 10f, 10f);
-                ParticleSystem part = dust.GetComponent<ParticleSystem>();
-                part.gravityModifier = -0.01f;
-                part.startLifetime = 8f;
+                //GameObject dust = Instantiate(dustExplosion, vec, Quaternion.Euler(-90f, 0, 0));
+                //dust.transform.localScale = new(10f, 10f, 10f);
+                //ParticleSystem part = dust.GetComponent<ParticleSystem>();
+                //part.gravityModifier = Random.Range(-0.15f, 0.15f);
+                //part.startLifetime = 100f;
 
             };
 

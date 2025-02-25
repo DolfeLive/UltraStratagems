@@ -78,8 +78,8 @@ public partial class Class1 : BaseUnityPlugin
         rocketLauncherFire.transform.Find("Point Light").GetComponent<Light>().enabled = false;
         dustFog = LoadAsset<GameObject>("dustfog.prefab");
         dustExplosion = LoadAsset<GameObject>("dustexplosion.prefab");
-
-         
+        stratBulletParticles = LoadAsset<GameObject>("bullet particles.prefab");
+        eagle = LoadAsset<GameObject>("eagle_public.prefab");
 
         Explosion lightningExp = lightningExplosion.transform.Find("Sphere_8").GetComponent<Explosion>();
         lightningExp.canHit = AffectedSubjects.PlayerOnly;
@@ -95,7 +95,7 @@ public partial class Class1 : BaseUnityPlugin
         lightningExplosion.transform.localScale = new(1.25f, 1.25f, 1.25f);
     }
 
-
+    public static GameObject eagle;
     public static GameObject lazerHit;
     public static GameObject rocketLauncherFire;
     public static GameObject explosionRocketHarmless;
@@ -108,6 +108,7 @@ public partial class Class1 : BaseUnityPlugin
     public static GameObject rocket;
     public static GameObject dustFog;
     public static GameObject dustExplosion;
+    public static GameObject stratBulletParticles;
     GameObject bombPod;
     Material BombMat;
 
@@ -122,12 +123,19 @@ public partial class Class1 : BaseUnityPlugin
         if (Input.GetKeyDown(KeyCode.K))
         {
             Ray ray = new Ray(nm.cc.gameObject.transform.position, nm.cc.gameObject.transform.forward);
-            if (Physics.Raycast(ray, out RaycastHit hitInfo, 100f, LayerMask.GetMask("Environment", "Outdoors")))
+            if (Physics.Raycast(ray, out RaycastHit hitInfo, 100f, LayerMask.GetMask("Environment", "Outdoors", "Default")))
             {
                 //print($"Ray hit: {hitInfo.collider}, pos: {hitInfo.point}, {hitInfo.collider.name}");
 
                 //GameObject marker = Instantiate(bombPod, hitInfo.point, nm.cc.transform.rotation);
-                GameObject marker = Instantiate(dustBig, hitInfo.point, Quaternion.identity);
+                //GameObject marker = Instantiate(dustBig, hitInfo.point, Quaternion.identity);
+
+                //GameObject marker = Instantiate(stratBulletParticles, nm.cc.gameObject.transform);
+                //marker.AddComponent<StratBullet>();
+                //marker.transform.position += marker.transform.forward * 2f;
+                print("Creating marker");
+
+                Instantiate(eagle, hitInfo.point, Quaternion.identity);
 
                 //Vector3 AttackDir = nm.cc.transform.right; 
                 //Vector3 AttackPos = hitInfo.point;
